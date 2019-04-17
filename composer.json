@@ -1,0 +1,29 @@
+{
+    "name": "pendant59/jwt",
+    "description": "simple jwt generation and verification tools",
+    "type": "library",
+    "require": {
+        "php": ">=7.0.0"
+    },
+    "require-dev": {
+        "php": ">=7.0.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "pendant59",
+            "email": "861618191@qq.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "keywords": [
+        "jwt",
+        "jsonwebtoken"
+    ],
+    "homepage": "https://github.com/Pendant59/Jwt",
+    "autoload": {
+        "psr-4": {
+            "jwt\\": "src/"
+        }
+    }
+}
