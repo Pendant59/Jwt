@@ -16,9 +16,8 @@ class Jwt
         'iss' => 'pendant59',                           # 签发者
         'aud' => 'https://github.com/Pendant59',        # 接收jwt的用户
         'expire' => 3 * 3600,                           # 过期时间 默认3小时
-        'return_array' => true,                         # true 返回 playload 中的data数组;false 返回 playload 中的data数组中的uid键值;
-        'data' => [                                     # token 中包含的加密字段 uid 为固定值
-            'uid'
+        'data' => [                                     # token 中包含的加密字段 user_id 为固定值
+            'user_id'
         ]
     ];
 
@@ -35,27 +34,31 @@ class Jwt
 
     /**
      * 生成Jwt
-     * @param array $data
+     * @param $data
      * @return string
+     * @throws \Exception
      */
     public function createJwt($data)
     {
-        if (!is_array($data)) {
-            return '参数应为关联数组';
+        # 参数类型检测
+        if (!is_array($data) || empty($data)) {
+            throw new \Exception('参数应为非空关联数组');
         }
+        # 参数键值检测
         $keys_array = array_keys($data);
-        if (!in_array('uid', $keys_array)) {
-            return 'uid 为固有字段';
+        if (!in_array('user_id', $keys_array)) {
+            throw new \Exception('必须包含key为user_id的键值对');
         }
+        # 生成playload需要的参数
         $token_data = [];
         try {
             foreach ($this->config['data'] as $value) {
                 $token_data[$value] = $data[$value];
             }
         } catch (\Exception $e) {
-            return '未找到键值';
+            throw new \Exception("参数数组中未包含键值{$value}");
         }
-
+        # 生成Jwt
         $begin_time = time();
         $token = [
             'iss' => $this->config['iss'],
@@ -74,58 +77,58 @@ class Jwt
 
     /**
      * 校验token
-     * @return array|int|string
+     * @return array|int
      */
     public function checkJwt()
     {
         $time = time();
+        # 返回值
+        $return = [];
         $token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
         if (empty($token)){
             # token为空 未登录
             return -1;
         }
-        $tokenArr = explode('.', $token);
-        list($header, $playload, $signature) = $tokenArr;
-        $headerArr = json_decode(base64_decode(self::safeDecode($header)),true);
-        $playloadArr = json_decode(base64_decode(self::safeDecode($playload)),true);
+        $token_arr = explode('.', $token);
+        list($header, $playload, $signature) = $token_arr;
+        $header_arr = json_decode(base64_decode(self::safeDecode($header)),true);
+        $playload_arr = json_decode(base64_decode(self::safeDecode($playload)),true);
 
-        if (!is_array($headerArr) || !is_array($playloadArr)){
+        if (!is_array($header_arr) || !is_array($playload_arr)){
             # token非法
             return -2;
         }
-        $diff = array_diff($headerArr, self::$Header);
+        $diff = array_diff($header_arr, self::$Header);
         if ($diff){
             # token非法
             return -2;
         }
 
-        if ($time > $playloadArr['exp']){
+        if ($time >= $playload_arr['exp']){
             # token过期
             return -3;
-        }
-
-        $data = [];
-        $data['uid']  = $playloadArr['data']['uid'] ?? '';
-        $data['type'] = $playloadArr['data']['type'] ?? '';
-
-        if (!$data['uid']) {
-            # 用户不存在
-            return -4;
-        }
-
-        $sign = self::createSignature(self::$Header['alg'], $header.$playload, $this->config['key']);
-        if ($sign != $signature) {
-            # 签名错误
-            return -5;
-        }
-
-        if ($this->config['return_array']) {
-            return $data;
         } else {
-            return $data['uid'];
+            # 返回剩余有效时间(秒)
+            $return['expire'] = $playload_arr['exp'] - $time;
         }
-    }
 
+        foreach ($playload_arr['data'] as $key => $value) {
+            $return[$key] = $value;
+        }
+
+        if (!isset($return['user_id']) && empty($return['user_id'])) {
+            # token非法
+            return -2;
+        }
+
+        $reproduce_sign = self::createSignature(self::$Header['alg'], $header . $playload, $this->config['key']);
+        if ($reproduce_sign != $signature) {
+            # token非法
+            return -2;
+        }
+
+        return $return;
+    }
 
     /**
      * 生成签名
