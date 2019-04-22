@@ -53,7 +53,7 @@ class Jwt
         $keys_array = array_keys($data);
 
         if (!in_array('user_id', $keys_array, true)) {
-
+            return $this->api_return(400, 'user_id 为固定键值,必须包含');
         }
         # 生成playload需要的参数
         $token_data = [];
