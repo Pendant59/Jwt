@@ -24,10 +24,14 @@ class Jwt
 
     /**
      * Jwt constructor.
-     * @param $self_config
+     * @param array $self_config
+     * @throws \Exception
      */
     public function __construct(array $self_config = [])
     {
+        if (version_compare(PHP_VERSION, '7.0.0', '<')) {
+            throw new \Exception('PHP版本最低为7.0.0');
+        }
         if ($self_config) {
             $this->config  = array_merge($this->config, $self_config);
         }
