@@ -38,7 +38,7 @@ $jwt_token = $jwt->createJwt($data);
 
 # 校验Jwt
 # 此处校验jwt 不传值的情况下，checkJwt() 会自己取值
-# 可以自己从header 头中的 Authorization 中取出传入checkJwt() 
+# 可以自己从header 头中的 Authorization 中取出jwt字符串并传入checkJwt() 
 # 如果传值, 以传值为准
 if ($jwt_token['code'] == 200) {
     $result = $jwt->checkJwt($jwt_token['data']['token']);
