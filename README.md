@@ -1,7 +1,8 @@
 # Jwt
 - **JsonWebToken**
 - 简单的Jwt 生成和校验类
-- author Pendant 861618191@qq.com
+- Pendant 861618191@qq.com
+- QQ群 316497602
 
 ### Token使用方法
 - **将生成的jwt字符串放到 Header 头中的 Authorization 中即可(不需要拼接Basic)** 
