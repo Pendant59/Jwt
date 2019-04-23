@@ -7,6 +7,13 @@
 ### Token使用方法
 - **将生成的jwt字符串放到 Header 头中的 Authorization 中即可(不需要拼接Basic)** 
 
+### 其他说明
+- 默认使用 sha256
+- 有建议或问题欢迎 issues
+
+### 下个版本计划
+- 新增自选加密算法
+
 ### 安装
 ```
 composer require pendant59/jwt
