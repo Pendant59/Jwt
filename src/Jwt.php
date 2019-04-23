@@ -136,6 +136,7 @@ class Jwt
             return $this->api_return(401, '无法识别用户身份');
         }
 
+        # 校验签名
         $reproduce_sign = self::createSignature(self::$Header['alg'], $header . $playload, $this->config['key']);
         if ($reproduce_sign != $signature) {
             return $this->api_return(401, 'Token签名错误');
