@@ -1,6 +1,6 @@
 {
     "name": "pendant59/jwt",
-    "description": "simple jwt generation and verification tools",
+    "description": "simple jwt generation and verification library",
     "type": "library",
     "require": {
         "php": ">=7.0.0"
@@ -14,7 +14,8 @@
     ],
     "keywords": [
         "jwt",
-        "jsonwebtoken"
+        "jsonwebtoken",
+        "Json Web Token"
     ],
     "homepage": "https://github.com/Pendant59/Jwt",
     "autoload": {
