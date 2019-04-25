@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace jwt;
 
 /**
@@ -7,11 +8,17 @@ namespace jwt;
  */
 class Jwt 
 {
+    /**
+     * @var array
+     */
     private static $Header = [
         'alg' => 'sha256',
         'typ' => 'Jwt'
         ];
 
+    /**
+     * @var array
+     */
     private $config = [
         'key' => 'b7xBa9sj8Jx2019xcA9fZ-pendant59',     # 加密Key
         'iss' => 'pendant59',                           # 签发者
@@ -42,7 +49,7 @@ class Jwt
      * @param array  $data  关联数组['user_id'=> XXX, .....]
      * @return array
      */
-    public function createJwt($data = [])
+    public function createJwt(array $data = []):array
     {
         # 参数类型检测
         if (!is_array($data) || empty($data)) {
@@ -90,9 +97,9 @@ class Jwt
     /**
      * 校验token
      * @param string $input_token  可传入或自动获得
-     * @return array|int
+     * @return array
      */
-    public function checkJwt(string $input_token = null)
+    public function checkJwt(string $input_token = '')
     {
         $time = time();
         # 返回值
@@ -150,7 +157,7 @@ class Jwt
      * @param array $self_config
      * @return $this
      */
-    public function setConfig(array $self_config)
+    public function setConfig(array $self_config):self
     {
         if ($self_config) {
             $this->config  = array_merge($this->config, $self_config);
@@ -174,7 +181,7 @@ class Jwt
      * @param array $data           返回数据
      * @return array
      */
-    public function api_return(int $code, string $message, array $data = [])
+    public function api_return(int $code, string $message, array $data = []):array
     {
         $return = [
             'code' => $code,
@@ -193,7 +200,7 @@ class Jwt
      * @param string $key
      * @return string
      */
-    public static function createSignature(string $alg, string $input, string $key)
+    public static function createSignature(string $alg, string $input, string $key):string
     {
         return hash_hmac($alg, $input, $key);
     }
@@ -203,7 +210,7 @@ class Jwt
      * @param string $input
      * @return string
      */
-    public static function safeEncode($input)
+    public static function safeEncode(string $input)
     {
         return strtr($input,['+' => '-', "/"=>'_']);
     }
@@ -213,7 +220,7 @@ class Jwt
      * @param $input
      * @return string
      */
-    public static function safeDecode($input)
+    public static function safeDecode(string $input)
     {
         return strtr($input, ['-' => '+', '_' => '/']);
     }
