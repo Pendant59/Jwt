@@ -181,7 +181,7 @@ class Jwt
      * @param array $data           返回数据
      * @return array
      */
-    public function api_return(int $code, string $message, array $data = []):array
+    public function api_return(int $code, string $message = '', array $data = []):array
     {
         $return = [
             'code' => $code,
