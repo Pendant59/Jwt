@@ -24,6 +24,7 @@ class Jwt
         'iss' => 'pendant59',                           # 签发者
         'aud' => 'https://github.com/Pendant59',        # 接收jwt的用户
         'expire' => 3 * 3600,                           # 过期时间(秒) 默认3小时
+        'update_limit' => 300,                          # Token 过期多少秒内可以用于更新 默认300秒
         'data' => [                                     # token 中包含的加密字段 user_id 为固定值(createJwt()只会选取此处data定义的字段参与加密)
             'user_id'
         ]
@@ -107,7 +108,7 @@ class Jwt
         # Token
         $token = $input_token ?: ($_SERVER['HTTP_AUTHORIZATION'] ?? null);
         if (empty($token)){
-            return $this->api_return(401, '未知Token');
+            return $this->api_return(401, '未知用户');
         }
         # Token 分解
         $token_arr = explode('.', $token);
@@ -117,20 +118,18 @@ class Jwt
 
         # 校验解密结果
         if (!is_array($header_arr) || !is_array($playload_arr)){
-            return $this->api_return(401, '非法Token');
+            return $this->api_return(401, '用户身份验证失败');
         }
 
         # 校验Header
         $diff = array_diff($header_arr, self::$Header);
         if ($diff){
-            return $this->api_return(401, 'Token校验失败');
+            return $this->api_return(401, '身份校验失败');
         }
 
         # 校验过期时间
         if ($time >= $playload_arr['exp']){
-            return $this->api_return(401, 'Token已过期');
-        } else {
-            $return['expire'] = $playload_arr['exp'];
+            return $this->api_return(401, '登录过期');
         }
 
         # 获取用户自定义加密array $data
@@ -140,14 +139,75 @@ class Jwt
 
         # 校验用户身份标识
         if (!isset($return['user_id']) && empty($return['user_id'])) {
-            return $this->api_return(401, '无法识别用户身份');
+            return $this->api_return(401, '无法识别当前用户');
         }
 
         # 校验签名
         $reproduce_sign = self::createSignature(self::$Header['alg'], $header . $playload, $this->config['key']);
         if ($reproduce_sign != $signature) {
-            return $this->api_return(401, 'Token签名错误');
+            return $this->api_return(401, '个人身份校验失败');
         }
+
+        return $this->api_return(200, '', $return);
+    }
+
+    /**
+     * 更新token
+     * @param string $input_token
+     * @return array
+     */
+    public function updateJwt(string $input_token = '')
+    {
+        # Token
+        $token = $input_token ?: ($_SERVER['HTTP_AUTHORIZATION'] ?? null);
+        if (empty($token)){
+            return $this->api_return(401, '未知用户');
+        }
+        # Token 分解
+        $token_arr = explode('.', $token);
+        list($header, $playload, $signature) = $token_arr;
+        $header_arr = json_decode(base64_decode(self::safeDecode($header)),true);
+        $playload_arr = json_decode(base64_decode(self::safeDecode($playload)),true);
+
+        # 校验解密结果
+        if (!is_array($header_arr) || !is_array($playload_arr)){
+            return $this->api_return(401, '用户身份验证失败');
+        }
+
+        # 过期五分钟后 不予更新
+        $now_time = time();
+        if ($now_time - $playload_arr['exp'] >= $this->config['update_limit']){
+            return $this->api_return(401, '登录过期,请重新登陆');
+        }
+
+        # 校验Header
+        $diff = array_diff($header_arr, self::$Header);
+        if ($diff){
+            return $this->api_return(401, '身份校验失败');
+        }
+
+        # 校验签名
+        $reproduce_sign = self::createSignature(self::$Header['alg'], $header . $playload, $this->config['key']);
+        if ($reproduce_sign != $signature) {
+            return $this->api_return(401, '个人身份校验失败');
+        }
+        
+        # 生成Jwt
+        $token = [
+            'iss' => $this->config['iss'],
+            'aud' => $this->config['aud'],
+            'iat' => $now_time, # 签发时间
+            'exp' => $now_time + $this->config['expire'],
+            'data' => $playload_arr['data']
+        ];
+
+        $h = self::safeEncode(base64_encode(json_encode(self::$Header)));
+        $p = self::safeEncode(base64_encode(json_encode($token)));
+        $s = self::createSignature(self::$Header['alg'], $h . $p, $this->config['key']);
+
+        $return = [];
+        $return['token'] = $h . '.' . $p . '.' . $s;
+        $return['expire'] = $token['exp'];
 
         return $this->api_return(200, '', $return);
     }
