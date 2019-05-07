@@ -11,8 +11,10 @@
 - 默认使用 sha256
 - 有建议或问题欢迎 issues
 
-### 下个版本计划
-- 暂无
+### 当前版本更新内容
+- v1.0.3
+- 新增更新Token方法
+- 修改Token校验返回的提示信息
 
 ### 安装
 ```
@@ -27,7 +29,8 @@ $config = [
     'iss' => 'pendant59',                           # 签发者
     'aud' => 'https://github.com/Pendant59',        # 接收jwt的用户
     'expire' => 6 * 3600,                           # 过期时间(秒) 默认3小时
-    'data' => [                                     # token 中包含的加密字段 user_id 为固定值(createJwt()只会选取此处data定义的字段参与加密,如果传入createJwt()的参数中不没有包含此处定义的非固定值键值对,则默认为空)
+    'update_limit' => 300,                          # Token 过期多少秒内可以用于更新 默认300秒
+    'data' => [                                     # Token 中包含的加密字段 user_id 为固定值(createJwt()只会选取此处data定义的字段参与加密,如果传入createJwt()的参数中不没有包含此处定义的非固定值键值对,则默认为空)
         'user_id',
         'nickname'
     ]
@@ -48,11 +51,19 @@ $jwt_token = $jwt->createJwt($data);
 # 可以自己从header 头中的 Authorization 中取出jwt字符串并传入checkJwt() 
 # 如果传值, 以传值为准
 if ($jwt_token['code'] == 200) {
+    # 校验Token
     $result = $jwt->checkJwt($jwt_token['data']['token']);
     print_r($result);
+    
+    sleep(5);  # 假装客户端 5 秒后 请求更新
+    # 更新Token
+    $result = $jwt->updateJwt($jwt_token['data']['token']);
+    print_r($result);
+    
 } else {
   print($jwt_token['message']);
 }
+
 
 
 
@@ -82,7 +93,8 @@ $config = [
     'iss' => 'pendant59',                           # 签发者
     'aud' => 'https://github.com/Pendant59',        # 接收jwt的用户
     'expire' => 6 * 3600,                           # 过期时间(秒) 默认3小时
-    'data' => [                                     # token 中包含的加密字段 user_id 为必有固定值(createJwt()只会选取此处data定义的字段参与加密,如果传入createJwt()的参数中不没有包含此处定义的非固定值键值对,则默认为空)
+    'update_limit' => 300,                          # Token 过期多少秒内可以用于更新 默认300秒
+    'data' => [                                     # Token 中包含的加密字段 user_id 为必有固定值(createJwt()只会选取此处data定义的字段参与加密,如果传入createJwt()的参数中不没有包含此处定义的非固定值键值对,则默认为空)
         'user_id',
         'nickname',
         'otherKeys'
@@ -95,16 +107,22 @@ $data = [
     ];
 
 
-$jwt = new Jwt();
+$jwt = (new Jwt())->setConfig($config);
 # 生成Jwt
-$jwt_token = $jwt->setConfig($config)->createJwt($data);
+$jwt_token = $jwt->createJwt($data);
 
 # 校验Jwt
 # 此处校验jwt 不传值的情况下，checkJwt() 会自己取值
 # 可以自己从header 头中的 Authorization 中取出传入checkJwt() 
 # 如果传值, 以传值为准
 if ($jwt_token['code'] == 200) {
+    # 校验Token
     $result = $jwt->checkJwt($jwt_token['data']['token']);
+    print_r($result);
+    
+    sleep(5);  # 假装客户端 5 秒后 请求更新
+    # 更新Token
+    $result = $jwt->updateJwt($jwt_token['data']['token']);
     print_r($result);
 } else {
   print($jwt_token['message']);
@@ -179,8 +197,6 @@ array(3) {
   string(7) "Success"
   ["data"]=>
   array(3) {
-    ["expire"]=>
-    int(1555690828)     # expire Token过期时间戳
     ["user_id"]=>
     int(1)              # user_id 用户标识
     ["nickname"]=>
